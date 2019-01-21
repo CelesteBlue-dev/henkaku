@@ -6,8 +6,8 @@ import subprocess
 
 
 tpl = """
-.equ ENC_PAYLOAD_ADDR, {payload_addr}
-.equ ENC_PAYLOAD_SIZE, {payload_size}
+.equ PAYLOAD_ADDR, {payload_addr}
+.equ PAYLOAD_SIZE, {payload_size}
 .equ BASE, {sysmem_base}
 .equ SECOND_PAYLOAD, {second_payload}
 """
@@ -62,7 +62,7 @@ def write_rop_code(krop, relocs, addr_pos, size_shift_pos, size_xor_pos, size_pl
             s = "Ret"
         output += tpl.format(s, x * 4)
     output += "  c.store(Load(d.kx_loader_addr), d.krop + 0x{:x})\n".format(addr_pos * 4)
-    # I've hardcoded payload size to be 0x200, deal with it
+    # I've hardcoded loader payload size to be 0x200, deal with it
     payload_size = 0x200
     output += "  c.store(0x{:x}, d.krop + 0x{:x})\n".format((payload_size >> 2) + 0x10, size_shift_pos * 4)
     output += "  c.store(0x{:x}, d.krop + 0x{:x})\n".format(payload_size ^ 0x40, size_xor_pos * 4)
