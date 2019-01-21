@@ -61,7 +61,7 @@ cp build/plugin/henkaku-stubs/libHENkaku_stub.a output/libHENkaku_stub.a
 HENKAKU_CRC32=$(crc32 output/henkaku.skprx)
 HENKAKU_USER_CRC32=$(crc32 output/henkaku.suprx)
 
-echo "1) Installer app"
+echo "1) Installer app (bootstrap)"
 
 echo "#define HENKAKU_CRC32 0x$HENKAKU_CRC32" >> build/version.c
 echo "#define HENKAKU_USER_CRC32 0x$HENKAKU_USER_CRC32" >> build/version.c
@@ -87,7 +87,6 @@ $AS -o build/loader_start.o payload/loader_start.S
 $LD -o build/loader.elf build/loader.o build/loader_start.o $LDFLAGS
 $OBJCOPY -O binary build/loader.elf build/loader.bin
 
-cat payload/pad.bin build/loader.bin > build/loader.full
 # loader must be <=0x100 bytes
 SIZE=$(ls -l build/loader.full | awk '{ print $5 }')
 if ((SIZE>0x100)); then
@@ -97,15 +96,18 @@ fi
 echo "loader size is $SIZE"
 
 echo "3) Kernel ROP"
+
 ./krop/build_rop.py krop/rop.S build/
 
 echo "4) User ROP"
+
 echo "symbol stage2_url_base = \"$HENKAKU_BIN_URL\";" > build/config.rop
 
 HENKAKU_BIN_WORDS=$(./urop/exploit.py build/loader.bin build/payload.bin output/web/henkaku.bin)
 ./urop/loader.py "$HENKAKU_BIN_URL" output/web/henkaku.bin $HENKAKU_BIN_WORDS output/web/payload.js
 
-echo "5) Webkit exploit"
+echo "5) WebKit exploit"
+
 # Hosted version
 $PREPROCESS webkit/exploit.js -DSTATIC=0 -o build/exploit.web.js
 uglifyjs build/exploit.web.js -m "toplevel" > build/exploit.js
