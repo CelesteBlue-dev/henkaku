@@ -88,7 +88,7 @@ $LD -o build/loader.elf build/loader.o build/loader_start.o $LDFLAGS
 $OBJCOPY -O binary build/loader.elf build/loader.bin
 
 # loader must be <=0x100 bytes
-SIZE=$(ls -l build/loader.full | awk '{ print $5 }')
+SIZE=$(ls -l build/loader.bin | awk '{ print $5 }')
 if ((SIZE>0x100)); then
 	echo "loader size is $SIZE but should be less or equal 0x100 bytes"
 	exit -1
