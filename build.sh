@@ -36,7 +36,7 @@ DEFINES="-DRELEASE=$RELEASE"
 PREPROCESS="$CC -E -P -C -w -x c $DEFINES"
 CFLAGS="-fPIE -fno-zero-initialized-in-bss -std=c99 -mcpu=cortex-a9 -Os -mthumb $DEFINES"
 
-# generate version stuffs
+# generate version stuff
 BUILD_VERSION=$(git describe --dirty --always --tags)
 BUILD_DATE=$(date)
 echo "#define BUILD_VERSION \"$BUILD_VERSION\"" >> build/version.c
@@ -48,7 +48,7 @@ echo "#define VITASHELL_CRC32 $VITASHELL_CRC32" >> build/version.c
 echo "#define TAIHEN_CRC32 $TAIHEN_CRC32" >> build/version.c
 echo "#define PSN_PASSPHRASE \"$PSN_PASSPHRASE\"" >> build/version.c
 
-echo "0) taiHEN plugin"
+echo "0) taiHEN plugins"
 
 mkdir build/plugin
 pushd build/plugin
@@ -61,12 +61,11 @@ cp build/plugin/henkaku-stubs/libHENkaku_stub.a output/libHENkaku_stub.a
 HENKAKU_CRC32=$(crc32 output/henkaku.skprx)
 HENKAKU_USER_CRC32=$(crc32 output/henkaku.suprx)
 
-echo "1) Installer"
+echo "1) Installer app"
 
 echo "#define HENKAKU_CRC32 0x$HENKAKU_CRC32" >> build/version.c
 echo "#define HENKAKU_USER_CRC32 0x$HENKAKU_USER_CRC32" >> build/version.c
 
-# user payload is injected into web browser process
 mkdir build/bootstrap
 pushd build/bootstrap
 cmake -DRELEASE=$RELEASE ../../bootstrap
@@ -74,7 +73,7 @@ make
 popd
 xxd -i build/bootstrap/bootstrap.self > build/bootstrap.h
 
-echo "2) Payload"
+echo "2) Kernel payload"
 
 $CC -c -o build/payload.o payload/payload.c $CFLAGS
 $LD -o build/payload.elf build/payload.o $LDFLAGS
@@ -82,7 +81,7 @@ $OBJCOPY -O binary build/payload.elf build/payload.bin
 PAYLOAD_SIZE=$(ls -l build/payload.bin | awk '{ print $5 }')
 echo "#define PAYLOAD_SIZE $PAYLOAD_SIZE" >> build/version.c
 
-# loader decrypts and lods a larger payload
+# loader loads a larger payload
 $CC -c -o build/loader.o payload/loader.c $CFLAGS
 $AS -o build/loader_start.o payload/loader_start.S
 $LD -o build/loader.elf build/loader.o build/loader_start.o $LDFLAGS
@@ -92,13 +91,10 @@ cat payload/pad.bin build/loader.bin > build/loader.full
 # loader must be <=0x100 bytes
 SIZE=$(ls -l build/loader.full | awk '{ print $5 }')
 if ((SIZE>0x100)); then
-	echo "loader size is $SIZE should be less or equal 0x100 bytes"
+	echo "loader size is $SIZE but should be less or equal 0x100 bytes"
 	exit -1
 fi
 echo "loader size is $SIZE"
-dd if=/dev/zero bs=256 count=1 > build/loader.256
-dd of=build/loader.256 if=build/loader.full bs=256 count=1 conv=notrunc
-openssl enc -aes-256-ecb -in build/loader.256 -nopad -out build/loader.enc -K BD00BF08B543681B6B984708BD00BF0023036018467047D0F8A03043F69D1130
 
 echo "3) Kernel ROP"
 ./krop/build_rop.py krop/rop.S build/
@@ -106,10 +102,10 @@ echo "3) Kernel ROP"
 echo "4) User ROP"
 echo "symbol stage2_url_base = \"$HENKAKU_BIN_URL\";" > build/config.rop
 
-HENKAKU_BIN_WORDS=$(./urop/exploit.py build/loader.enc build/payload.bin output/web/henkaku.bin)
+HENKAKU_BIN_WORDS=$(./urop/exploit.py build/loader.bin build/payload.bin output/web/henkaku.bin)
 ./urop/loader.py "$HENKAKU_BIN_URL" output/web/henkaku.bin $HENKAKU_BIN_WORDS output/web/payload.js
 
-echo "5) Webkit"
+echo "5) Webkit exploit"
 # Hosted version
 $PREPROCESS webkit/exploit.js -DSTATIC=0 -o build/exploit.web.js
 uglifyjs build/exploit.web.js -m "toplevel" > build/exploit.js
