@@ -55,7 +55,7 @@ copy_from_user_to_kernel:
 @r1=PAYLOAD_ADDR
 @r2=PAYLOAD_SIZE
 @SceSysmem_ksceKernelMemcpyUserToKernel, 0x6289
-  .word BASE+0x000258bd @ pop {r0, r1, r2, r3, r4, pc}
+  .word BASE+0x000258fd @ pop {r0, r1, r2, r3, r4, pc}
   .word      0xDEADBEEF @ r0 = dummy
   .word    PAYLOAD_ADDR @ r1 = PAYLOAD_ADDR
   .word    PAYLOAD_SIZE @ r2 = PAYLOAD_SIZE
