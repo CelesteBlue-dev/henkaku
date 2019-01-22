@@ -46,7 +46,7 @@ def chunk(b, size):
     return [b[x * size:(x + 1) * size] for x in range(0, len(b) // size)]
 
 
-def write_rop_code(krop, relocs, addr_pos, size_shift_pos, size_xor_pos, size_plain_pos, second_payload_pos):
+def write_rop_code(krop, relocs, addr_pos, size_plain_pos, second_payload_pos):
     output = ""
     output += "from rop import Ret, Load\n"
     output += "def krop(rop):\n"
@@ -64,8 +64,6 @@ def write_rop_code(krop, relocs, addr_pos, size_shift_pos, size_xor_pos, size_pl
     output += "  c.store(Load(d.kx_loader_addr), d.krop + 0x{:x})\n".format(addr_pos * 4)
     # I've hardcoded loader payload size to be 0x200, deal with it
     payload_size = 0x200
-    output += "  c.store(0x{:x}, d.krop + 0x{:x})\n".format((payload_size >> 2) + 0x10, size_shift_pos * 4)
-    output += "  c.store(0x{:x}, d.krop + 0x{:x})\n".format(payload_size ^ 0x40, size_xor_pos * 4)
     output += "  c.store(0x{:x}, d.krop + 0x{:x})\n".format(payload_size, size_plain_pos * 4)
     output += "  c.store(d.second_payload, d.krop + 0x{:x})\n".format(second_payload_pos * 4)
     return output
@@ -102,16 +100,12 @@ def main():
     krop = first = chunk(first, 4)
     second = chunk(second, 4)
     relocs = [0] * len(first)
-    addr_pos = size_shift_pos = size_xor_pos = size_plain_pos = second_payload_pos = -1
+    addr_pos = size_plain_pos = second_payload_pos = -1
     for i, (first_word, second_word) in enumerate(zip(first, second)):
         if first_word != second_word:
             second = int.from_bytes(second_word, "little")
             if second == tags["payload_addr"]:
                 addr_pos = i
-            elif second == (tags["payload_size"] >> 2) + 0x10:
-                size_shift_pos = i
-            elif second == tags["payload_size"] ^ 0x40:
-                size_xor_pos = i
             elif second == tags["payload_size"]:
                 size_plain_pos = i
             elif second == tags["second_payload"]:
@@ -119,15 +113,15 @@ def main():
             else:
                 relocs[i] = 1
 
-    if -1 in [addr_pos, size_shift_pos, size_xor_pos, size_plain_pos, second_payload_pos]:
-        print("unable to resolve positions: addr={}, size_shift={}, size_xor={}, size_plain={}, second_payload={}".format(
-            addr_pos, size_shift_pos, size_xor_pos, size_plain_pos, second_payload_pos))
+    if -1 in [addr_pos, size_plain_pos, second_payload_pos]:
+        print("unable to resolve positions: addr={}, size_plain={}, second_payload={}".format(
+            addr_pos, size_plain_pos, second_payload_pos))
         return -2
 
     print("Kernel rop size: 0x{:x} bytes".format(len(krop) * 4))
 
     with open(os.path.join(argv[2], "krop.py"), "w") as fout:
-        fout.write(write_rop_code(krop, relocs, addr_pos, size_shift_pos, size_xor_pos, size_plain_pos, second_payload_pos))
+        fout.write(write_rop_code(krop, relocs, addr_pos, size_plain_pos, second_payload_pos))
 
 
 if __name__ == "__main__":
